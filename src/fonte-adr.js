@@ -72,7 +72,9 @@ function orario (cella, etichetta) {
 
 function normalizzaCodice (grezzo) {
   if (!grezzo) return null
-  const trovato = grezzo.trim().match(/([A-Z0-9]{2})\s*(\d{1,4})$/)
+  // Il suffisso a lettera (FR 5873A) e' una numerazione legittima, usata per i
+  // settori extra: senza di lui il codice usciva null e il numero finiva nel vettore.
+  const trovato = grezzo.trim().match(/([A-Z0-9]{2})\s*(\d{1,4}[A-Z]?)$/)
   return trovato ? `${trovato[1]} ${trovato[2]}` : null
 }
 

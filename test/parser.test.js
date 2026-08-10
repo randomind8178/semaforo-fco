@@ -26,7 +26,7 @@ test('ogni volo ha codice, origine e stato non vuoti', () => {
 
 test('il codice volo è sigla più numero', () => {
   for (const volo of estraiVoli(html)) {
-    assert.match(volo.codice, /^[A-Z0-9]{2} \d{1,4}$/, `codice malformato: ${volo.codice}`)
+    assert.match(volo.codice, /^[A-Z0-9]{2} \d{1,4}[A-Z]?$/, `codice malformato: ${volo.codice}`)
   }
 })
 
