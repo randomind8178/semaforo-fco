@@ -4,7 +4,7 @@ const BASE = 'https://www.adr.it/pax-fco-voli-in-tempo-reale'
 const P = '_3_WAR_realtimeflightsportlet_'
 const AGENTE = 'semaforo-fco/0.1 (progetto personale, uso non commerciale)'
 
-export function costruisciUrl ({ pagina = 1, orario = '00:00-24:00', data = '', righePerPagina }) {
+export function costruisciUrl ({ pagina = 1, orario = '00:00-24:00', data = '', righePerPagina } = {}) {
   if (!righePerPagina) {
     throw new Error('costruisciUrl: righePerPagina è obbligatorio e arriva da config.json')
   }
@@ -39,6 +39,9 @@ export function costruisciUrl ({ pagina = 1, orario = '00:00-24:00', data = '', 
 const pausa = (ms) => new Promise((r) => setTimeout(r, ms))
 
 export async function scaricaPagina (opzioni, rete) {
+  if (!rete) {
+    throw new Error('scaricaPagina: il blocco rete di config.json è obbligatorio (tentativi, attesaMs, timeoutMs)')
+  }
   const url = costruisciUrl(opzioni)
   let ultimoErrore
   for (let n = 1; n <= rete.tentativi; n++) {
