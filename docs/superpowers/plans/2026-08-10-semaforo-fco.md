@@ -1084,10 +1084,7 @@ button {
   background: none; border: 1px solid #ccc; border-radius: .5rem; color: #444;
 }
 footer { padding: 1.4rem .9rem 2.4rem; text-align: center; font-size: .78rem; color: #777; }
-</style>
 ```
-
-Attenzione: il blocco sopra è CSS, non HTML — non copiare il `</style>` finale nel file.
 
 - [ ] **Step 3: Scrivere `app.js`**
 
