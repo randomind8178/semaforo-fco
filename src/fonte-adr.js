@@ -122,3 +122,22 @@ export function estraiVoli (html) {
 
   return voli
 }
+
+export async function scaricaGiornata (config, { data = '' } = {}) {
+  const voli = []
+  let pagine = 0
+
+  for (let pagina = 1; pagina <= config.maxPagine; pagina++) {
+    const html = await scaricaPagina({ pagina, data, righePerPagina: config.righePerPagina }, config.rete)
+    const lotto = estraiVoli(html)
+    pagine = pagina
+    voli.push(...lotto)
+    if (lotto.length < config.righePerPagina) break
+    await pausa(config.pausaFraPagineMs)
+  }
+
+  if (pagine === config.maxPagine) {
+    console.warn(`attenzione: raggiunto maxPagine=${config.maxPagine}, la giornata potrebbe essere troncata`)
+  }
+  return voli
+}
