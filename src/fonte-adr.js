@@ -62,3 +62,61 @@ export async function scaricaPagina (opzioni, rete) {
     (ultimoErrore?.message ?? 'nessun tentativo eseguito, tentativi <= 0 in config.json')
   )
 }
+
+const testo = (nodo) => nodo.text().replace(/\s+/g, ' ').trim()
+
+function orario (cella, etichetta) {
+  const trovato = cella.match(new RegExp(`${etichetta}:\\s*(\\d{2}:\\d{2})`))
+  return trovato ? trovato[1] : null
+}
+
+function normalizzaCodice (grezzo) {
+  if (!grezzo) return null
+  const trovato = grezzo.trim().match(/([A-Z0-9]{2})\s*(\d{1,4})$/)
+  return trovato ? `${trovato[1]} ${trovato[2]}` : null
+}
+
+function leggiVolo (cellaVolo) {
+  const [primaParte, secondaParte] = cellaVolo.split(/Operato da:/)
+  const operatoDa = normalizzaCodice(secondaParte)
+  const codice = normalizzaCodice(primaParte)
+  const vettore = codice
+    ? primaParte.slice(0, primaParte.lastIndexOf(codice.split(' ')[0])).replace(/[-\s]+$/, '').trim()
+    : primaParte.trim()
+  return { codice, vettore, operatoDa }
+}
+
+export function estraiVoli (html) {
+  const $ = cheerio.load(html)
+  const voli = []
+
+  $('tbody tr[data-qa-id="row"]').each((_, riga) => {
+    const $riga = $(riga)
+    const cellaOrari = testo($riga.find('td.lfr-scheduled-time-column'))
+    const cellaVolo = testo($riga.find('td.card-fg__code'))
+    const cellaOrigine = testo($riga.find('td.card-fg__dest'))
+    const cellaTerminal = testo($riga.find('td.card-fg__terminal'))
+    const cellaStato = testo($riga.find('td.card-fg__arrivals'))
+
+    const previsto = orario(cellaOrari, 'Orario previsto')
+    if (!previsto) return
+
+    const { codice, vettore, operatoDa } = leggiVolo(cellaVolo)
+    const iata = cellaOrigine.match(/\(([A-Z]{3})\)/)
+    const terminal = cellaTerminal.match(/\bT(\d)\b/)
+
+    voli.push({
+      previsto,
+      effettivo: orario(cellaOrari, 'Orario effettivo'),
+      vettore,
+      codice,
+      operatoDa,
+      origine: cellaOrigine.replace(/\s*\([A-Z]{3}\)\s*/, '').trim(),
+      iata: iata ? iata[1] : null,
+      terminal: terminal ? `T${terminal[1]}` : null,
+      stato: cellaStato.replace(/^Stato volo:\s*/, '').trim()
+    })
+  })
+
+  return voli
+}
