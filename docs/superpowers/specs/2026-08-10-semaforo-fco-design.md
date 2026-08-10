@@ -263,15 +263,26 @@ risposta. Se ADR rifà il sito e il parser non trova più righe, `data.json` esc
 zero voli, e **zero voli si colorano di rosso**: l'app resta funzionante e dice
 all'utente di restare a casa per sempre.
 
-- **Controllo di plausibilità nel cron.** Se lo scarico di una giornata intera
-  produce meno di 100 voli, il cron **falla rumorosamente e non scrive
-  `data.json`**. Attenzione: questa è una soglia minima di sopravvivenza, più
-  larga della forchetta 350-600 usata dal test sulla deduplica (§ Test). Sono due
-  controlli diversi: questo difende dal parser morto, quello dal doppio
-  conteggio. Un dato di quaranta minuti fa è meglio di un dato vuoto verniciato
-  di rosso.
-  Nota: *una* fascia a zero è normale (alle 4 del mattino non atterra niente); è la
-  giornata intera a zero che è un guasto.
+- **La fonte non dà una giornata di calendario, ma una finestra mobile.** Misurato sul
+  campo: scaricando alle 16:53 il primo `previsto` era 14:00 e l'ultimo 23:55. La pagina
+  «voli in tempo reale» mostra ~2-3 ore indietro e il resto della giornata, e non c'è
+  modo di chiederle le ore già passate. Funzionalmente non è un problema — il semaforo
+  guarda `oreAvantiInLista` ore avanti — ma **ogni soglia calibrata su un giorno intero è
+  sbagliata**, e ogni conteggio assoluto dipende dall'ora in cui gira il cron.
+- **Controllo di plausibilità nel cron.** Se lo scarico produce meno di
+  `minimoVoliPlausibile` righe, il cron **falla rumorosamente e non scrive `data.json`**:
+  difende dal parser morto. Un dato di quaranta minuti fa è meglio di un dato vuoto
+  verniciato di rosso.
+  **Punto aperto**, da chiudere insieme agli orari del cron (§ Task 10): con la finestra
+  mobile, a tarda sera restano legittimamente poche decine di voli, quindi una soglia
+  fissa a 100 farebbe fallire il cron ogni notte per un motivo che non è un guasto. La
+  soglia va abbassata, oppure resa proporzionale alle ore che restano nella finestra.
+- **Controllo del doppio conteggio.** È un controllo diverso dal precedente e vive nel
+  test sulla deduplica (§ Test): guarda il **rapporto** fra righe grezze e voli dedotti,
+  non il totale. Il rapporto non dipende dall'ora, il totale sì.
+  Nota: *una* fascia a zero è normale (alle 4 del mattino non atterra niente), e le fasce
+  fuori dalla finestra sono vuote perché la fonte non le fornisce; è il raccolto intero a
+  zero che è un guasto.
 - **Cron fermo o in ritardo.** La pagina calcola l'età del dato da `generatoAlle`:
   oltre i 30 minuti mostra un avviso, oltre le 3 ore **smette di colorare** e
   dichiara i dati non affidabili. Il colore è una promessa; su dati vecchi non la
@@ -293,13 +304,18 @@ Deciso con l'utente: **nucleo minimo subito, il resto rimandato.**
 
 Subito, perché protegge i numeri:
 
-1. **Controllo del totale dopo la deduplica** su una fixture di giornata intera:
-   il risultato deve cadere fra **350 e 600 voli**. Il valore atteso è 450-500;
-   la forchetta è larga per non far fallire il test nei giorni di traffico
-   anomalo, ma resta abbastanza stretta da accendersi se la deduplica smette di
-   funzionare (senza deduplica il totale sta intorno a 800). È l'unica difesa
-   contro il conteggio raddoppiato in silenzio. La forchetta sta in
+1. **Controllo del rapporto di deduplica** su una fixture di raccolto vero: il
+   rapporto fra righe grezze e voli dedotti deve cadere fra **2 e 4,5**. Misurato
+   sul campo: 717 righe grezze → 249 voli fisici, rapporto **2,88**. È l'unica
+   difesa contro il conteggio raddoppiato in silenzio: vicino a 1 la deduplica non
+   sta funzionando, molto sopra sta fondendo voli distinti. La forchetta sta in
    configurazione, non nel test.
+   Il controllo è sul rapporto e non sul totale perché la fonte è una board live a
+   finestra mobile (§ Cosa può andare storto): il numero di voli dipende dall'ora
+   in cui gira lo scarico, il rapporto no. La prima stesura chiedeva «fra 350 e 600
+   voli dopo la deduplica», calibrata su una giornata di calendario che la fonte
+   non fornisce e su un rapporto presunto di ~1,7 invece del 2,88 reale: sarebbe
+   fallita sempre.
 2. **Soglie ai bordi**: 2 contro 3 e 5 contro 6, dove i colori si scambiano.
 
 Rimandato (→ backlog): fasce vuote, volo ritardato che cambia fascia, cancellati

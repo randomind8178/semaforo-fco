@@ -100,7 +100,7 @@ Il pezzo più a rischio del progetto è costruire l'URL giusto: un set di parame
   "maxPagine": 80,
   "pausaFraPagineMs": 1200,
   "minimoVoliPlausibile": 100,
-  "forchettaDeduplica": { "min": 350, "max": 600 },
+  "rapportoDeduplica": { "min": 2, "max": 4.5 },
   "etaAvvisoMinuti": 30,
   "etaNonAffidabileMinuti": 180,
   "rete": { "tentativi": 3, "attesaMs": 2000, "timeoutMs": 20000 },
@@ -598,14 +598,20 @@ test('gli stati esclusi non arrivano al conteggio', () => {
   assert.equal(escludiStati(voli, config.statiEsclusi.length ? config.statiEsclusi : ['Cancellato']).length, 1)
 })
 
-test('su una giornata vera la deduplica riporta il totale nella forchetta plausibile', async () => {
+// Il controllo è sul RAPPORTO grezzi/dedotti, non sul totale assoluto: la fonte è una
+// board live con una finestra mobile di poche ore, quindi il numero di voli dipende
+// dall'ora in cui gira lo scarico, mentre il rapporto no. Osservato sul campo: 717
+// righe grezze → 249 voli fisici, rapporto 2,88.
+test('su una giornata vera la deduplica ha un rapporto plausibile', async () => {
   const grezzi = JSON.parse(await readFile('test/fixture/voli-giornata.json', 'utf8'))
   const puliti = deduplica(grezzi)
-  const { min, max } = config.forchettaDeduplica
+  const rapporto = grezzi.length / puliti.length
+  const { min, max } = config.rapportoDeduplica
   assert.ok(
-    puliti.length >= min && puliti.length <= max,
-    `attesi fra ${min} e ${max} voli dopo deduplica, ottenuti ${puliti.length} (grezzi: ${grezzi.length}). ` +
-    'Se è vicino al totale grezzo la deduplica non sta funzionando; se è molto sotto sta fondendo voli distinti.'
+    rapporto >= min && rapporto <= max,
+    `atteso un rapporto fra ${min} e ${max}, ottenuto ${rapporto.toFixed(2)} ` +
+    `(${grezzi.length} grezzi → ${puliti.length} dedotti). ` +
+    'Vicino a 1 la deduplica non sta funzionando; molto sopra sta fondendo voli distinti.'
   )
 })
 ```
@@ -982,10 +988,16 @@ Expected: una riga di riepilogo con quattro numeri, e `data.json` creato.
 
 Run: `node -e "const d=require('./data.json'); console.log(d.verdetto); console.log(d.fasce.filter(f=>f.voli>0).slice(0,8))"`
 
-Da verificare a mano, perché nessun test lo copre:
-- le fasce notturne (02:00-04:00) devono essere a zero o quasi: se sono piene, gli orari sono sfasati
-- le fasce di punta (07:00-10:00 e 17:00-21:00) devono essere le più cariche
-- `voliDopoDeduplica` deve stare nella forchetta 350-600
+Da verificare a mano, perché nessun test lo copre. **Attenzione: la fonte è una board live
+con una finestra mobile** (misurato: scaricando alle 16:53 il primo `previsto` era 14:00 e
+l'ultimo 23:55, quindi ~2-3 ore indietro e nient'altro). Quindi i controlli sulle fasce
+valgono solo per le ore che cadono dentro la finestra, e dipendono dall'ora dello scarico:
+- le fasce **dentro la finestra** e prima dell'ora corrente devono avere voli in stato
+  `Arrivato`; quelle dopo, voli `Schedulato`. Se è invertito, gli orari sono sfasati
+- le fasce **fuori dalla finestra** sono vuote perché la fonte non le fornisce, non perché
+  non atterri niente: non leggerle come un guasto
+- il rapporto `righeScaricate / voliDopoDeduplica` deve stare fra `rapportoDeduplica.min` e
+  `max` (osservato 2,88). Il totale assoluto **non** è un riferimento utile: cambia con l'ora
 - `verdetto.arrivoStimato` deve essere l'ora corrente più mezz'ora
 
 - [ ] **Step 4: Commit**
