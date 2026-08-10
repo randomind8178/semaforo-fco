@@ -62,8 +62,8 @@ Il pezzo più a rischio del progetto è costruire l'URL giusto: un set di parame
 **Interfaces:**
 - Consumes: niente, è la prima task
 - Produces:
-  - `costruisciUrl({ pagina, orario, data, righePerPagina }) → string`
-  - `scaricaPagina({ pagina, orario, data, righePerPagina }, { tentativi, attesaMs }) → Promise<string>` (HTML)
+  - `costruisciUrl({ pagina, orario, data, righePerPagina }) → string` — `righePerPagina` è obbligatorio, non ha default
+  - `scaricaPagina({ pagina, orario, data, righePerPagina }, rete) → Promise<string>` (HTML), dove `rete` è il blocco `config.rete`
 
 - [ ] **Step 1: Creare `package.json`**
 
@@ -103,9 +103,14 @@ Il pezzo più a rischio del progetto è costruire l'URL giusto: un set di parame
   "forchettaDeduplica": { "min": 350, "max": 600 },
   "etaAvvisoMinuti": 30,
   "etaNonAffidabileMinuti": 180,
+  "rete": { "tentativi": 3, "attesaMs": 2000, "timeoutMs": 20000 },
   "statiEsclusi": []
 }
 ```
+
+Il blocco `rete` esiste perché il vincolo globale non ammette eccezioni: anche i
+numeri tecnici stanno in configurazione. Sono anche quelli che si toccano davvero,
+il giorno che adr.it risponde lento.
 
 - [ ] **Step 3: Installare la dipendenza**
 
@@ -123,7 +128,10 @@ const BASE = 'https://www.adr.it/pax-fco-voli-in-tempo-reale'
 const P = '_3_WAR_realtimeflightsportlet_'
 const AGENTE = 'semaforo-fco/0.1 (progetto personale, uso non commerciale)'
 
-export function costruisciUrl ({ pagina = 1, orario = '00:00-24:00', data = '', righePerPagina = 20 } = {}) {
+export function costruisciUrl ({ pagina = 1, orario = '00:00-24:00', data = '', righePerPagina }) {
+  if (!righePerPagina) {
+    throw new Error('costruisciUrl: righePerPagina è obbligatorio e arriva da config.json')
+  }
   const q = new URLSearchParams({
     p_p_id: '3_WAR_realtimeflightsportlet',
     p_p_lifecycle: '0',
@@ -154,36 +162,40 @@ export function costruisciUrl ({ pagina = 1, orario = '00:00-24:00', data = '', 
 
 const pausa = (ms) => new Promise((r) => setTimeout(r, ms))
 
-export async function scaricaPagina (opzioni = {}, { tentativi = 3, attesaMs = 2000 } = {}) {
+export async function scaricaPagina (opzioni, rete) {
   const url = costruisciUrl(opzioni)
   let ultimoErrore
-  for (let n = 1; n <= tentativi; n++) {
+  for (let n = 1; n <= rete.tentativi; n++) {
     try {
       const risposta = await fetch(url, {
         headers: { 'User-Agent': AGENTE, 'Accept-Language': 'it-IT,it' },
-        signal: AbortSignal.timeout(20000)
+        signal: AbortSignal.timeout(rete.timeoutMs)
       })
       if (!risposta.ok) throw new Error(`HTTP ${risposta.status}`)
       return await risposta.text()
     } catch (errore) {
       ultimoErrore = errore
-      if (n < tentativi) await pausa(attesaMs * n)
+      if (n < rete.tentativi) await pausa(rete.attesaMs * n)
     }
   }
-  throw new Error(`scaricaPagina fallita dopo ${tentativi} tentativi: ${ultimoErrore.message}`)
+  throw new Error(
+    `scaricaPagina fallita dopo ${rete.tentativi} tentativi: ` +
+    (ultimoErrore?.message ?? 'nessun tentativo eseguito, tentativi <= 0 in config.json')
+  )
 }
 ```
 
 - [ ] **Step 5: Scrivere `strumenti/salva-fixture.js`**
 
 ```js
-import { writeFile, mkdir } from 'node:fs/promises'
+import { writeFile, mkdir, readFile } from 'node:fs/promises'
 import { scaricaPagina } from '../src/fonte-adr.js'
 
+const config = JSON.parse(await readFile('config.json', 'utf8'))
 const pagina = Number(process.argv[2] ?? 1)
 const destinazione = process.argv[3] ?? 'test/fixture/pagina-arrivi.html'
 
-const html = await scaricaPagina({ pagina })
+const html = await scaricaPagina({ pagina, righePerPagina: config.righePerPagina }, config.rete)
 if (!html.includes('Orario previsto')) {
   console.error('ATTENZIONE: la pagina non contiene "Orario previsto".')
   console.error('Probabile URL incompleto: il portlet risponde 200 con "Nessun elemento è stato trovato".')
@@ -389,7 +401,7 @@ export async function scaricaGiornata (config, { data = '' } = {}) {
   let pagine = 0
 
   for (let pagina = 1; pagina <= config.maxPagine; pagina++) {
-    const html = await scaricaPagina({ pagina, data, righePerPagina: config.righePerPagina })
+    const html = await scaricaPagina({ pagina, data, righePerPagina: config.righePerPagina }, config.rete)
     const lotto = estraiVoli(html)
     pagine = pagina
     voli.push(...lotto)
@@ -422,7 +434,7 @@ if (modo === 'giornata') {
   console.log(`Salvati ${voli.length} voli grezzi in test/fixture/voli-giornata.json`)
 } else {
   const pagina = Number(process.argv[3] ?? 1)
-  const html = await scaricaPagina({ pagina })
+  const html = await scaricaPagina({ pagina, righePerPagina: config.righePerPagina }, config.rete)
   if (!html.includes('Orario previsto')) {
     console.error('ATTENZIONE: la pagina non contiene "Orario previsto". URL probabilmente incompleto.')
     process.exit(1)
