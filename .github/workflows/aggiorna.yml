@@ -1,0 +1,45 @@
+name: aggiorna i dati
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: aggiorna
+  cancel-in-progress: false
+
+jobs:
+  aggiorna:
+    runs-on: ubuntu-latest
+    env:
+      TZ: Europe/Rome
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run genera
+      - name: committa se qualcosa è cambiato
+        # In pratica il controllo non scatta mai, perché generatoAlle cambia a ogni
+        # esecuzione: quindi si committa sempre. È voluto, non una dimenticanza. La
+        # pagina mostra l'età del dato leggendo generatoAlle, e se saltassimo i commit
+        # "senza variazioni" il telefono direbbe "aggiornato 45 minuti fa" mentre il
+        # cron sta girando regolarmente. Il controllo resta come rete se un giorno il
+        # formato del file cambiasse.
+        run: |
+          git config user.name  'semaforo-fco'
+          git config user.email 'actions@users.noreply.github.com'
+          if git diff --quiet data.json; then
+            echo 'nessuna variazione'
+            exit 0
+          fi
+          git add data.json
+          git commit -m "dati: aggiornamento automatico"
+          git push
