@@ -973,7 +973,7 @@ Il controllo di plausibilità è il punto centrale di questo file: se il parser 
 import { readFile, writeFile } from 'node:fs/promises'
 import { scaricaGiornata } from './fonte-adr.js'
 import { deduplica, escludiStati, costruisciFasce, calcolaVerdetto, sospettiDuplicati } from './aggregatore.js'
-import { adessoInMinuti, oggiARoma } from './tempo.js'
+import { adessoInMinuti, oggiARoma, inMinuti } from './tempo.js'
 
 const config = JSON.parse(await readFile('config.json', 'utf8'))
 
@@ -992,6 +992,16 @@ const dedotti = deduplica(grezzi)
 const contabili = escludiStati(dedotti, config.statiEsclusi)
 const adesso = adessoInMinuti()
 
+// Fin dove arriva il dato, che non e' la giornata intera. Senza questo campo la pagina
+// non puo' distinguere "in questa fascia non atterra niente" da "di questa fascia non
+// sappiamo niente". Il confine si ricava dagli orari PREVISTI e non da quelli d'arrivo,
+// perche' un volo molto ritardato atterra dopo la mezzanotte e falserebbe qualunque
+// minimo o massimo calcolato sugli arrivi.
+const copertura = {
+  daMinuti: Math.min(...dedotti.map((volo) => inMinuti(volo.previsto))),
+  aMinuti: 1440
+}
+
 const uscita = {
   generatoAlle: new Date().toISOString(),
   giorno: oggiARoma(),
@@ -1005,6 +1015,7 @@ const uscita = {
     etaAvvisoMinuti: config.etaAvvisoMinuti,
     etaNonAffidabileMinuti: config.etaNonAffidabileMinuti
   },
+  copertura,
   verdetto: calcolaVerdetto(contabili, config, adesso),
   fasce: costruisciFasce(contabili, config),
   diagnostica: {
@@ -1064,7 +1075,9 @@ git commit -m "feat: generazione di data.json con controllo di plausibilità che
 - Consumes: `data.json` prodotto da Task 8
 - Produces: la pagina servita da GitHub Pages
 
-Layout approvato: verdetto grande in cima, lista compatta delle fasce successive, giornata intera a richiesta, età del dato sempre visibile. Il numero di voli è **scritto dentro** ogni fascia e non affidato solo al colore: al sole non si distingue il verde dal giallo, e una persona su dieci è daltonica.
+Layout approvato: verdetto grande in cima, lista compatta delle fasce successive, età del dato sempre visibile. Il numero di voli è **scritto dentro** ogni fascia e non affidato solo al colore: al sole non si distingue il verde dal giallo, e una persona su dieci è daltonica.
+
+**Modificato in implementazione, deciso col proprietario.** La vista "Tutta la giornata" è stata rimossa e la lista mostra solo le fasce coperte dal dato (campo `copertura` di `data.json`). Motivo: la fonte è una board live che dà ~2 ore di passato e il resto della giornata, quindi le 48 fasce contengono una mattinata a `voli: 0` in ore in cui erano atterrati centinaia di aerei. Non era solo la vista opzionale a mentire: con l'arrivo alle 21:10 il filtro circolare della lista predefinita includeva già le fasce 00:00, 00:30 e 01:00 del giorno dopo, di cui la fonte non ha nulla.
 
 - [ ] **Step 1: Scrivere `index.html`**
 
@@ -1088,8 +1101,7 @@ Layout approvato: verdetto grande in cima, lista compatta delle fasce successive
   <section id="verdetto" class="verdetto"></section>
   <h2>Poi</h2>
   <ul id="prossime" class="fasce"></ul>
-  <button id="apriGiornata" type="button">Tutta la giornata</button>
-  <ul id="giornata" class="fasce" hidden></ul>
+  <p id="senzaDati" hidden></p>
 </main>
 
 <footer>
@@ -1124,6 +1136,7 @@ main { padding: .9rem; max-width: 32rem; margin: 0 auto; }
 h2 { font-size: .75rem; text-transform: uppercase; letter-spacing: .12em; color: #666; margin: 1.2rem 0 .5rem; }
 
 #avviso { background: #fff3cd; border: 1px solid #e0c97f; border-radius: .5rem; padding: .7rem .8rem; font-size: .85rem; margin-bottom: .9rem; }
+#senzaDati { background: var(--grigio); border-radius: .5rem; padding: .7rem .8rem; font-size: .85rem; color: #444; margin: 0; }
 
 .verdetto { border-radius: .8rem; padding: 1.1rem; color: #fff; }
 .verdetto .etichetta { font-size: .65rem; letter-spacing: .12em; text-transform: uppercase; opacity: .9; }
@@ -1147,10 +1160,6 @@ h2 { font-size: .75rem; text-transform: uppercase; letter-spacing: .12em; color:
 .fasce li.spento { background: var(--grigio); }
 .fasce li.passata { opacity: .45; }
 
-button {
-  width: 100%; margin-top: .8rem; padding: .7rem; font: inherit;
-  background: none; border: 1px solid #ccc; border-radius: .5rem; color: #444;
-}
 footer { padding: 1.4rem .9rem 2.4rem; text-align: center; font-size: .78rem; color: #777; }
 ```
 
@@ -1195,18 +1204,40 @@ function riga (fascia, affidabile, passata) {
   </li>`
 }
 
+// Si disegnano solo le fasce di cui la fonte ha davvero il dato, intersecate con un
+// intorno dell'orario di arrivo: una fascia di passato recente per contesto, e
+// oreAvantiInLista in avanti. Fuori dalla copertura uno zero non sarebbe un conteggio
+// ma un'assenza travestita da fatto.
 function disegnaFasce (dati, affidabile) {
-  const daMinuti = dati.verdetto.arrivoMinuti
-  const larghezzaLista = dati.config.oreAvantiInLista * 60
-  const prossime = dati.fasce.filter((f) => {
-    const distanza = ((f.inizioMinuti - daMinuti) % 1440 + 1440) % 1440
-    return distanza <= larghezzaLista
+  const arrivo = dati.verdetto.arrivoMinuti
+  const ampiezza = dati.config.ampiezzaFasciaMinuti
+  const fasciaArrivo = Math.floor(arrivo / ampiezza) * ampiezza
+  const primaMostrabile = fasciaArrivo - ampiezza
+  const oltreLaLista = arrivo + dati.config.oreAvantiInLista * 60
+
+  const mostrate = dati.fasce.filter((f) => {
+    const coperta = f.inizioMinuti + ampiezza > dati.copertura.daMinuti &&
+                    f.inizioMinuti < dati.copertura.aMinuti
+    const vicina = f.inizioMinuti >= primaMostrabile && f.inizioMinuti < oltreLaLista
+    return coperta && vicina
   })
-  elemento('prossime').innerHTML = prossime.map((f) => riga(f, affidabile, false)).join('')
-  elemento('giornata').innerHTML = dati.fasce
-    .map((f) => riga(f, affidabile, f.inizioMinuti < daMinuti))
+
+  elemento('prossime').innerHTML = mostrate
+    .map((f) => riga(f, affidabile, f.inizioMinuti + ampiezza <= arrivo))
     .join('')
+
+  // Succede fra le 23:30 e la mezzanotte: l'arrivo stimato cade domani, e dei voli di
+  // domani la fonte non sa ancora nulla. Meglio dirlo che disegnare fasce vuote.
+  const senzaDati = elemento('senzaDati')
+  senzaDati.hidden = mostrate.length > 0
+  if (!mostrate.length) {
+    senzaDati.textContent = 'Il tuo arrivo cade dopo la mezzanotte, e i voli di domani non sono ancora pubblicati. Il verdetto qui sopra conta solo gli eventuali voli di oggi molto in ritardo.'
+  }
 }
+
+// Nota sul flag `passata`: la prima stesura usava `f.inizioMinuti < daMinuti`, che
+// smorzava anche la fascia CONTENENTE l'arrivo. Ora si smorza solo se la fascia
+// finisce prima dell'arrivo.
 
 async function avvia () {
   let dati
@@ -1234,12 +1265,6 @@ async function avvia () {
 
   disegnaVerdetto(dati, affidabile)
   disegnaFasce(dati, affidabile)
-
-  elemento('apriGiornata').addEventListener('click', () => {
-    const lista = elemento('giornata')
-    lista.hidden = !lista.hidden
-    elemento('apriGiornata').textContent = lista.hidden ? 'Tutta la giornata' : 'Chiudi'
-  })
 }
 
 avvia()
@@ -1252,8 +1277,9 @@ Aprire `http://localhost:8080`.
 
 Da verificare a occhio:
 - il verdetto in cima mostra l'ora corrente più mezz'ora, con un colore
-- la lista sotto parte dalla fascia di arrivo e va avanti circa quattro ore
-- "Tutta la giornata" apre le 48 fasce, con le passate smorzate
+- la lista sotto parte da una fascia prima dell'arrivo (smorzata) e va avanti circa
+  quattro ore, **fermandosi a fine giornata**: nessuna fascia del giorno dopo
+- nessuna fascia prima di `copertura.daMinuti`: la mattina non deve comparire a zero
 - restringendo la finestra a 360px di larghezza nulla esce dallo schermo
 
 Poi la prova del degrado, che è la parte che nessuno prova mai: modificare a mano `generatoAlle` in `data.json` mettendo una data di ieri, ricaricare, e verificare che i colori si spengano e compaia l'avviso. Rimettere il valore giusto rigenerando con `npm run genera`.

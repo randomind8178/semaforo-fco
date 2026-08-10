@@ -1,5 +1,5 @@
 {
- "generatoAlle": "2026-08-10T18:40:19.933Z",
+ "generatoAlle": "2026-08-10T18:47:18.199Z",
  "giorno": "2026-08-10",
  "config": {
   "ampiezzaFasciaMinuti": 30,
@@ -12,10 +12,14 @@
   "etaAvvisoMinuti": 30,
   "etaNonAffidabileMinuti": 180
  },
+ "copertura": {
+  "daMinuti": 1080,
+  "aMinuti": 1440
+ },
  "verdetto": {
-  "arrivoMinuti": 1270,
-  "arrivoStimato": "21:10",
-  "voli": 16,
+  "arrivoMinuti": 1277,
+  "arrivoStimato": "21:17",
+  "voli": 17,
   "colore": "verde"
  },
  "fasce": [
@@ -286,13 +290,13 @@
   {
    "inizioMinuti": 1320,
    "inizio": "22:00",
-   "voli": 8,
+   "voli": 7,
    "colore": "verde"
   },
   {
    "inizioMinuti": 1350,
    "inizio": "22:30",
-   "voli": 12,
+   "voli": 13,
    "colore": "verde"
   },
   {

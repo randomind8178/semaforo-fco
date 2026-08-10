@@ -1,0 +1,45 @@
+:root {
+  --verde: #cdeccd; --verde-pieno: #4f9c4f;
+  --giallo: #fbe9b8; --giallo-pieno: #d9a520;
+  --rosso: #f6cfcf; --rosso-pieno: #c04b4b;
+  --grigio: #e6e6e8; --testo: #14161a;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; font-family: system-ui, sans-serif; color: var(--testo);
+  background: #fbfbfc; -webkit-text-size-adjust: 100%;
+}
+header {
+  display: flex; justify-content: space-between; gap: 1rem;
+  background: #14161a; color: #fff; padding: .6rem .9rem; font-size: .8rem;
+  position: sticky; top: 0;
+}
+main { padding: .9rem; max-width: 32rem; margin: 0 auto; }
+h2 { font-size: .75rem; text-transform: uppercase; letter-spacing: .12em; color: #666; margin: 1.2rem 0 .5rem; }
+
+#avviso { background: #fff3cd; border: 1px solid #e0c97f; border-radius: .5rem; padding: .7rem .8rem; font-size: .85rem; margin-bottom: .9rem; }
+#senzaDati { background: var(--grigio); border-radius: .5rem; padding: .7rem .8rem; font-size: .85rem; color: #444; margin: 0; }
+
+.verdetto { border-radius: .8rem; padding: 1.1rem; color: #fff; }
+.verdetto .etichetta { font-size: .65rem; letter-spacing: .12em; text-transform: uppercase; opacity: .9; }
+.verdetto .ora { font-size: 2.2rem; font-weight: 800; line-height: 1.1; }
+.verdetto .dettaglio { font-size: .9rem; }
+.verdetto.verde { background: var(--verde-pieno); }
+.verdetto.giallo { background: var(--giallo-pieno); }
+.verdetto.rosso { background: var(--rosso-pieno); }
+.verdetto.spento { background: var(--grigio); color: var(--testo); }
+
+.fasce { list-style: none; margin: 0; padding: 0; }
+.fasce li {
+  display: flex; align-items: center; gap: .6rem;
+  padding: .55rem .7rem; margin-bottom: .25rem; border-radius: .5rem;
+  font-variant-numeric: tabular-nums;
+}
+.fasce li .conteggio { margin-left: auto; font-weight: 700; }
+.fasce li.verde { background: var(--verde); }
+.fasce li.giallo { background: var(--giallo); }
+.fasce li.rosso { background: var(--rosso); }
+.fasce li.spento { background: var(--grigio); }
+.fasce li.passata { opacity: .45; }
+
+footer { padding: 1.4rem .9rem 2.4rem; text-align: center; font-size: .78rem; color: #777; }

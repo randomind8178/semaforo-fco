@@ -3,7 +3,7 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { scaricaGiornata } from './fonte-adr.js'
 import { deduplica, escludiStati, costruisciFasce, calcolaVerdetto, sospettiDuplicati } from './aggregatore.js'
-import { adessoInMinuti, oggiARoma } from './tempo.js'
+import { adessoInMinuti, oggiARoma, inMinuti } from './tempo.js'
 
 // Questo file lo lancia il cron, che non garantisce da quale cartella: config.json
 // in ingresso e data.json in uscita si risolvono dalla radice del progetto, non
@@ -28,6 +28,18 @@ const dedotti = deduplica(grezzi)
 const contabili = escludiStati(dedotti, config.statiEsclusi)
 const adesso = adessoInMinuti()
 
+// Fin dove arriva il dato, che non e' la giornata intera. La fonte e' una board live:
+// da' circa due ore di passato e il resto della giornata. Senza questo campo la pagina
+// non puo' distinguere "in questa fascia non atterra niente" da "di questa fascia non
+// sappiamo niente", e disegnerebbe uno zero al posto di un'assenza. Il confine si ricava
+// dagli orari PREVISTI e non da quelli d'arrivo, perche' un volo molto ritardato atterra
+// dopo la mezzanotte (visto: previsto 19:55, stimato 01:55) e falserebbe qualunque
+// minimo o massimo calcolato sugli arrivi.
+const copertura = {
+  daMinuti: Math.min(...dedotti.map((volo) => inMinuti(volo.previsto))),
+  aMinuti: 1440
+}
+
 const uscita = {
   generatoAlle: new Date().toISOString(),
   giorno: oggiARoma(),
@@ -41,6 +53,7 @@ const uscita = {
     etaAvvisoMinuti: config.etaAvvisoMinuti,
     etaNonAffidabileMinuti: config.etaNonAffidabileMinuti
   },
+  copertura,
   verdetto: calcolaVerdetto(contabili, config, adesso),
   fasce: costruisciFasce(contabili, config),
   diagnostica: {

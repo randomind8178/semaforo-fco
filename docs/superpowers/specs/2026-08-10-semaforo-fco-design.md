@@ -110,6 +110,7 @@ file di tre settimane fa e sapere con che soglie era stato colorato.
     "etaAvvisoMinuti": 30,
     "etaNonAffidabileMinuti": 180
   },
+  "copertura": { "daMinuti": 1080, "aMinuti": 1440 },
   "verdetto": {
     "arrivoMinuti": 875,
     "arrivoStimato": "14:35",
@@ -143,6 +144,18 @@ differenza fra due istanti veri.
 Il blocco `diagnostica` non serve alla UI: serve a noi per accorgerci che la
 deduplica ha smesso di funzionare.
 
+**`copertura` dice fin dove arriva il dato, e serve a non mentire con uno zero.**
+`fasce` copre sempre le 24 ore, ma la fonte è una board live che dà circa due ore di
+passato e il resto della giornata: delle fasce fuori da quell'intervallo non sappiamo
+niente, e `voli: 0` sarebbe un'assenza travestita da conteggio. Misurato: generando
+alle 20:46, `copertura.daMinuti` era 1080, cioè le 18:00. Senza questo campo la pagina
+mostrava la mattinata di Fiumicino a zero voli — e nella lista predefinita, alle 21:10,
+già disegnava le fasce 00:00, 00:30 e 01:00 del giorno dopo, di cui la fonte non ha
+ancora nulla.
+Il confine si ricava dagli orari **previsti**, non da quelli d'arrivo: un volo molto
+in ritardo atterra dopo la mezzanotte (osservato: previsto 19:55, stimato 01:55) e
+falserebbe qualunque minimo o massimo calcolato sugli arrivi.
+
 ### La pagina
 
 HTML, CSS e JavaScript, senza framework e senza build. Legge `data.json` e
@@ -155,7 +168,16 @@ Layout (approvato su mockup):
 - **Sotto, la lista compatta** delle fasce successive, una riga per fascia, con il
   numero **scritto dentro** e non solo il colore: al sole non distingui il verde
   dal giallo, e un utente su dieci è daltonico.
-- **"Tutta la giornata"** apre il resto, fasce passate incluse ma smorzate.
+  La lista mostra **solo le fasce di cui esiste il dato** (vedi `copertura`),
+  intersecate con un intorno dell'arrivo: una fascia di passato recente, smorzata,
+  per dare contesto, e `oreAvantiInLista` in avanti. Se l'arrivo stimato cade dopo la
+  mezzanotte — succede fra le 23:30 e le 24:00 — non c'è nessuna fascia da mostrare e
+  al suo posto compare una riga che lo dice.
+- ~~**"Tutta la giornata"** apre il resto, fasce passate incluse ma smorzate.~~
+  **Rimosso in implementazione**, deciso col proprietario. Prometteva una giornata che
+  la fonte non fornisce: apriva le 48 fasce e la mattinata usciva a zero voli, quando
+  in quelle ore erano atterrati centinaia di aerei di cui non abbiamo le righe. Una
+  vista che mente su metà del suo contenuto vale meno che non averla.
 - **L'ora dell'ultimo aggiornamento, sempre visibile.** Se il cron è fermo,
   l'utente deve accorgersene dallo schermo.
 
