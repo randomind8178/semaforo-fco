@@ -5,7 +5,7 @@
   "type": "module",
   "engines": { "node": ">=22" },
   "scripts": {
-    "test": "node --test test/",
+    "test": "node --test",
     "genera": "node src/genera.js",
     "fixture": "node strumenti/salva-fixture.js",
     "stati": "node strumenti/censisci-stati.js"
