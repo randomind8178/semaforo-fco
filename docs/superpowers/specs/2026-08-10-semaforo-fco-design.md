@@ -100,29 +100,45 @@ file di tre settimane fa e sapere con che soglie era stato colorato.
 
 ```json
 {
-  "generatoAlle": "2026-08-10T14:05:00+02:00",
+  "generatoAlle": "2026-08-10T12:05:31.000Z",
   "giorno": "2026-08-10",
   "config": {
     "ampiezzaFasciaMinuti": 30,
     "minutiViaggio": 30,
-    "soglie": { "giallo": 3, "verde": 6 }
+    "soglie": { "giallo": 3, "verde": 6 },
+    "oreAvantiInLista": 4,
+    "etaAvvisoMinuti": 30,
+    "etaNonAffidabileMinuti": 180
   },
   "verdetto": {
-    "arrivoStimato": "2026-08-10T14:35:00+02:00",
+    "arrivoMinuti": 875,
+    "arrivoStimato": "14:35",
     "voli": 6,
     "colore": "verde"
   },
   "fasce": [
-    { "inizio": "2026-08-10T14:00:00+02:00", "voli": 7, "colore": "verde" },
-    { "inizio": "2026-08-10T14:30:00+02:00", "voli": 6, "colore": "verde" }
+    { "inizio": "14:00", "voli": 7, "colore": "verde" },
+    { "inizio": "14:30", "voli": 6, "colore": "verde" }
   ],
   "diagnostica": {
     "righeScaricate": 812,
     "voliDopoDeduplica": 468,
-    "scartati": { "cancellati": 3, "dirottati": 0 }
+    "voliContabili": 465,
+    "scartatiPerStato": 3,
+    "sospettiDuplicati": 2
   }
 }
 ```
+
+**Gli orari delle fasce sono ora locale a muro, non timestamp.** ADR pubblica
+`13:05` come ora locale di Roma, e le fasce sono fasce locali: se non convertiamo
+mai in UTC e mai indietro, l'aritmetica sui fusi e sul cambio dell'ora non entra
+nel progetto. Internamente un orario è un numero di minuti dalla mezzanotte locale
+del giorno corrente (le 00:15 di domani sono 1455).
+
+L'unico timestamp reale è `generatoAlle`, in UTC, che serve alla pagina per
+calcolare l'età del dato. Quello non può essere ora locale, perché l'età è una
+differenza fra due istanti veri.
 
 Il blocco `diagnostica` non serve alla UI: serve a noi per accorgerci che la
 deduplica ha smesso di funzionare.
@@ -167,8 +183,16 @@ vende quel volo.
    operativo.
 2. Se la riga operativa non è nella finestra scaricata (succede ai bordi), si
    tiene la prima e si scartano le altre con lo stesso `operatoDa`.
-3. Rete di sicurezza sui dati sporchi: raggruppamento per `IATA origine + orario
-   previsto`.
+3. Sui dati sporchi — righe che sono lo stesso aereo ma senza `operatoDa` — non si
+   fonde niente: si **conta e si segnala**. Un contatore in `diagnostica` riporta
+   quante righe condividono origine, orario previsto e orario aggiornato senza
+   dichiarare un codeshare.
+
+Il punto 3 era nato come regola di fusione ed è stato declassato a diagnostica
+durante la stesura del piano, per un motivo concreto: da Parigi possono atterrare
+due voli veri e distinti allo stesso minuto, e una regola che fonde per
+`origine + orario` li cancellerebbe. Meglio un numero gonfiato che si vede in
+diagnostica che un volo vero sparito in silenzio.
 
 **Va misurato, non sperato.** La pagina arrivi sembra restituire intorno alle 800
 righe al giorno (numero da confermare in implementazione), mentre Fiumicino riceve
@@ -183,8 +207,16 @@ scrivere la regola definitiva. Fino ad allora la regola prudente è **contare
 tutto tranne ciò che riconosciamo come cancellato o dirottato**.
 
 **Fuso orario.** GitHub Actions gira in UTC, ADR pubblica ora locale di Roma.
-Senza forzatura l'app sbaglia di due ore d'estate e di una d'inverno. Tutta l'app
-ragiona in `Europe/Rome` e le fasce si costruiscono su ora locale.
+Senza attenzione l'app sbaglia di due ore d'estate e di una d'inverno. La difesa
+non è convertire bene: è **non convertire affatto** (vedi § `data.json`). Gli
+orari restano ora locale a muro dall'inizio alla fine, e l'unico punto in cui il
+fuso entra in gioco è la domanda "che ora è adesso a Roma", risolta con
+`Intl.DateTimeFormat` su `Europe/Rome`.
+
+Residuo noto e accettato: nella notte in cui l'ora torna indietro, la fascia
+02:00-02:30 esiste due volte nella realtà e l'app le fonde in una sola, mostrando
+la somma dei voli. Una notte all'anno, alle due e mezza, su una fascia che è rossa
+comunque.
 
 **Mezzanotte.** Alle 23:50 il verdetto punta al giorno dopo: lo scarico deve
 includere anche la prima fascia del giorno successivo.
@@ -211,9 +243,13 @@ totale giornaliero. Nessuno di questi numeri va scritto nel codice.
 La cadenza del cron **non** sta qui: sta nel workflow di GitHub Actions, che è
 l'unico posto che la può far rispettare.
 
-In `data.json` viene copiato solo il sottoinsieme che influenza i numeri (ampiezza
-fascia, minuti di viaggio, soglie), perché è quello che serve a reinterpretare un
-file vecchio.
+In `data.json` viene copiato il sottoinsieme che serve a **interpretare o a
+disegnare** i numeri: ampiezza fascia, minuti di viaggio, soglie, ore da mostrare
+nella lista, limiti di età oltre i quali avvisare o spegnere i colori. La pagina
+non legge `config.json` — è servita staticamente e `config.json` non le arriva —
+quindi tutto ciò che le serve deve viaggiare dentro `data.json`. Il resto dei
+parametri (paginazione, pause, forchette di plausibilità) riguarda solo lo scarico
+e resta fuori.
 
 Le soglie definiscono due confini, non tre: `giallo` e `verde`. Rosso è tutto
 quello che sta sotto `giallo`.
@@ -267,8 +303,9 @@ Subito, perché protegge i numeri:
 2. **Soglie ai bordi**: 2 contro 3 e 5 contro 6, dove i colori si scambiano.
 
 Rimandato (→ backlog): fasce vuote, volo ritardato che cambia fascia, cancellati
-esclusi, mezzanotte, ultima domenica di ottobre, fixture catturate in giorni
-diversi.
+esclusi, il verdetto che scavalca la mezzanotte, fixture catturate in giorni
+diversi. Il cambio dell'ora non è più fra i test da scrivere: la scelta di non
+convertire mai gli orari lo ha reso irrilevante.
 
 Regole che restano valide comunque:
 
