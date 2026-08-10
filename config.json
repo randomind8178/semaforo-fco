@@ -10,5 +10,6 @@
   "forchettaDeduplica": { "min": 350, "max": 600 },
   "etaAvvisoMinuti": 30,
   "etaNonAffidabileMinuti": 180,
+  "rete": { "tentativi": 3, "attesaMs": 2000, "timeoutMs": 20000 },
   "statiEsclusi": []
 }

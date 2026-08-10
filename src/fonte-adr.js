@@ -4,7 +4,10 @@ const BASE = 'https://www.adr.it/pax-fco-voli-in-tempo-reale'
 const P = '_3_WAR_realtimeflightsportlet_'
 const AGENTE = 'semaforo-fco/0.1 (progetto personale, uso non commerciale)'
 
-export function costruisciUrl ({ pagina = 1, orario = '00:00-24:00', data = '', righePerPagina = 20 } = {}) {
+export function costruisciUrl ({ pagina = 1, orario = '00:00-24:00', data = '', righePerPagina }) {
+  if (!righePerPagina) {
+    throw new Error('costruisciUrl: righePerPagina è obbligatorio e arriva da config.json')
+  }
   const q = new URLSearchParams({
     p_p_id: '3_WAR_realtimeflightsportlet',
     p_p_lifecycle: '0',
@@ -35,21 +38,24 @@ export function costruisciUrl ({ pagina = 1, orario = '00:00-24:00', data = '', 
 
 const pausa = (ms) => new Promise((r) => setTimeout(r, ms))
 
-export async function scaricaPagina (opzioni = {}, { tentativi = 3, attesaMs = 2000 } = {}) {
+export async function scaricaPagina (opzioni, rete) {
   const url = costruisciUrl(opzioni)
   let ultimoErrore
-  for (let n = 1; n <= tentativi; n++) {
+  for (let n = 1; n <= rete.tentativi; n++) {
     try {
       const risposta = await fetch(url, {
         headers: { 'User-Agent': AGENTE, 'Accept-Language': 'it-IT,it' },
-        signal: AbortSignal.timeout(20000)
+        signal: AbortSignal.timeout(rete.timeoutMs)
       })
       if (!risposta.ok) throw new Error(`HTTP ${risposta.status}`)
       return await risposta.text()
     } catch (errore) {
       ultimoErrore = errore
-      if (n < tentativi) await pausa(attesaMs * n)
+      if (n < rete.tentativi) await pausa(rete.attesaMs * n)
     }
   }
-  throw new Error(`scaricaPagina fallita dopo ${tentativi} tentativi: ${ultimoErrore.message}`)
+  throw new Error(
+    `scaricaPagina fallita dopo ${rete.tentativi} tentativi: ` +
+    (ultimoErrore?.message ?? 'nessun tentativo eseguito, tentativi <= 0 in config.json')
+  )
 }
