@@ -1,0 +1,318 @@
+{
+ "generatoAlle": "2026-08-10T18:40:19.933Z",
+ "giorno": "2026-08-10",
+ "config": {
+  "ampiezzaFasciaMinuti": 30,
+  "minutiViaggio": 30,
+  "soglie": {
+   "giallo": 3,
+   "verde": 6
+  },
+  "oreAvantiInLista": 4,
+  "etaAvvisoMinuti": 30,
+  "etaNonAffidabileMinuti": 180
+ },
+ "verdetto": {
+  "arrivoMinuti": 1270,
+  "arrivoStimato": "21:10",
+  "voli": 16,
+  "colore": "verde"
+ },
+ "fasce": [
+  {
+   "inizioMinuti": 0,
+   "inizio": "00:00",
+   "voli": 0,
+   "colore": "rosso"
+  },
+  {
+   "inizioMinuti": 30,
+   "inizio": "00:30",
+   "voli": 0,
+   "colore": "rosso"
+  },
+  {
+   "inizioMinuti": 60,
+   "inizio": "01:00",
+   "voli": 0,
+   "colore": "rosso"
+  },
+  {
+   "inizioMinuti": 90,
+   "inizio": "01:30",
+   "voli": 0,
+   "colore": "rosso"
+  },
+  {
+   "inizioMinuti": 120,
+   "inizio": "02:00",
+   "voli": 0,
+   "colore": "rosso"
+  },
+  {
+   "inizioMinuti": 150,
+   "inizio": "02:30",
+   "voli": 0,
+   "colore": "rosso"
+  },
+  {
+   "inizioMinuti": 180,
+   "inizio": "03:00",
+   "voli": 0,
+   "colore": "rosso"
+  },
+  {
+   "inizioMinuti": 210,
+   "inizio": "03:30",
+   "voli": 0,
+   "colore": "rosso"
+  },
+  {
+   "inizioMinuti": 240,
+   "inizio": "04:00",
+   "voli": 0,
+   "colore": "rosso"
+  },
+  {
+   "inizioMinuti": 270,
+   "inizio": "04:30",
+   "voli": 0,
+   "colore": "rosso"
+  },
+  {
+   "inizioMinuti": 300,
+   "inizio": "05:00",
+   "voli": 0,
+   "colore": "rosso"
+  },
+  {
+   "inizioMinuti": 330,
+   "inizio": "05:30",
+   "voli": 0,
+   "colore": "rosso"
+  },
+  {
+   "inizioMinuti": 360,
+   "inizio": "06:00",
+   "voli": 0,
+   "colore": "rosso"
+  },
+  {
+   "inizioMinuti": 390,
+   "inizio": "06:30",
+   "voli": 0,
+   "colore": "rosso"
+  },
+  {
+   "inizioMinuti": 420,
+   "inizio": "07:00",
+   "voli": 0,
+   "colore": "rosso"
+  },
+  {
+   "inizioMinuti": 450,
+   "inizio": "07:30",
+   "voli": 0,
+   "colore": "rosso"
+  },
+  {
+   "inizioMinuti": 480,
+   "inizio": "08:00",
+   "voli": 0,
+   "colore": "rosso"
+  },
+  {
+   "inizioMinuti": 510,
+   "inizio": "08:30",
+   "voli": 0,
+   "colore": "rosso"
+  },
+  {
+   "inizioMinuti": 540,
+   "inizio": "09:00",
+   "voli": 0,
+   "colore": "rosso"
+  },
+  {
+   "inizioMinuti": 570,
+   "inizio": "09:30",
+   "voli": 0,
+   "colore": "rosso"
+  },
+  {
+   "inizioMinuti": 600,
+   "inizio": "10:00",
+   "voli": 0,
+   "colore": "rosso"
+  },
+  {
+   "inizioMinuti": 630,
+   "inizio": "10:30",
+   "voli": 0,
+   "colore": "rosso"
+  },
+  {
+   "inizioMinuti": 660,
+   "inizio": "11:00",
+   "voli": 0,
+   "colore": "rosso"
+  },
+  {
+   "inizioMinuti": 690,
+   "inizio": "11:30",
+   "voli": 0,
+   "colore": "rosso"
+  },
+  {
+   "inizioMinuti": 720,
+   "inizio": "12:00",
+   "voli": 0,
+   "colore": "rosso"
+  },
+  {
+   "inizioMinuti": 750,
+   "inizio": "12:30",
+   "voli": 0,
+   "colore": "rosso"
+  },
+  {
+   "inizioMinuti": 780,
+   "inizio": "13:00",
+   "voli": 0,
+   "colore": "rosso"
+  },
+  {
+   "inizioMinuti": 810,
+   "inizio": "13:30",
+   "voli": 0,
+   "colore": "rosso"
+  },
+  {
+   "inizioMinuti": 840,
+   "inizio": "14:00",
+   "voli": 0,
+   "colore": "rosso"
+  },
+  {
+   "inizioMinuti": 870,
+   "inizio": "14:30",
+   "voli": 0,
+   "colore": "rosso"
+  },
+  {
+   "inizioMinuti": 900,
+   "inizio": "15:00",
+   "voli": 0,
+   "colore": "rosso"
+  },
+  {
+   "inizioMinuti": 930,
+   "inizio": "15:30",
+   "voli": 0,
+   "colore": "rosso"
+  },
+  {
+   "inizioMinuti": 960,
+   "inizio": "16:00",
+   "voli": 0,
+   "colore": "rosso"
+  },
+  {
+   "inizioMinuti": 990,
+   "inizio": "16:30",
+   "voli": 0,
+   "colore": "rosso"
+  },
+  {
+   "inizioMinuti": 1020,
+   "inizio": "17:00",
+   "voli": 0,
+   "colore": "rosso"
+  },
+  {
+   "inizioMinuti": 1050,
+   "inizio": "17:30",
+   "voli": 3,
+   "colore": "giallo"
+  },
+  {
+   "inizioMinuti": 1080,
+   "inizio": "18:00",
+   "voli": 10,
+   "colore": "verde"
+  },
+  {
+   "inizioMinuti": 1110,
+   "inizio": "18:30",
+   "voli": 5,
+   "colore": "giallo"
+  },
+  {
+   "inizioMinuti": 1140,
+   "inizio": "19:00",
+   "voli": 19,
+   "colore": "verde"
+  },
+  {
+   "inizioMinuti": 1170,
+   "inizio": "19:30",
+   "voli": 16,
+   "colore": "verde"
+  },
+  {
+   "inizioMinuti": 1200,
+   "inizio": "20:00",
+   "voli": 11,
+   "colore": "verde"
+  },
+  {
+   "inizioMinuti": 1230,
+   "inizio": "20:30",
+   "voli": 14,
+   "colore": "verde"
+  },
+  {
+   "inizioMinuti": 1260,
+   "inizio": "21:00",
+   "voli": 15,
+   "colore": "verde"
+  },
+  {
+   "inizioMinuti": 1290,
+   "inizio": "21:30",
+   "voli": 16,
+   "colore": "verde"
+  },
+  {
+   "inizioMinuti": 1320,
+   "inizio": "22:00",
+   "voli": 8,
+   "colore": "verde"
+  },
+  {
+   "inizioMinuti": 1350,
+   "inizio": "22:30",
+   "voli": 12,
+   "colore": "verde"
+  },
+  {
+   "inizioMinuti": 1380,
+   "inizio": "23:00",
+   "voli": 5,
+   "colore": "giallo"
+  },
+  {
+   "inizioMinuti": 1410,
+   "inizio": "23:30",
+   "voli": 9,
+   "colore": "verde"
+  }
+ ],
+ "diagnostica": {
+  "righeScaricate": 348,
+  "voliDopoDeduplica": 149,
+  "voliContabili": 143,
+  "scartatiPerStato": 6,
+  "sospettiDuplicati": 1
+ }
+}
