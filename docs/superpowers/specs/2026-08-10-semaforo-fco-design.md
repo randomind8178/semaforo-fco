@@ -179,14 +179,18 @@ muovono. Non è un difetto, è il ritardo che si sposta.
 **Deduplica dei codeshare.** Un aereo compare più volte, una riga per vettore che
 vende quel volo.
 
+0. Se due righe sono identiche in **ogni** campo, sono la stessa riga vista due
+   volte e se ne tiene una. Non è una regola di fusione: nessun volo vero condivide
+   codice, orario, origine, terminal e stato con un altro volo vero. Basta un campo
+   diverso — un terminal, un orario aggiornato — e restano entrambe.
 1. Se una riga ha `operatoDa`, si scarta la riga e si tiene quella del volo
    operativo.
 2. Se la riga operativa non è nella finestra scaricata (succede ai bordi), si
    tiene la prima e si scartano le altre con lo stesso `operatoDa`.
-3. Sui dati sporchi — righe che sono lo stesso aereo ma senza `operatoDa` — non si
-   fonde niente: si **conta e si segnala**. Un contatore in `diagnostica` riporta
-   quante righe condividono origine, orario previsto e orario aggiornato senza
-   dichiarare un codeshare.
+3. Sui dati sporchi — righe che *sembrano* lo stesso aereo, con origine e orario
+   uguali ma codice diverso — non si fonde niente: si **conta e si segnala**. Un
+   contatore in `diagnostica` riporta quante righe condividono origine, orario
+   previsto e orario aggiornato senza dichiarare un codeshare.
 
 Il punto 3 era nato come regola di fusione ed è stato declassato a diagnostica
 durante la stesura del piano, per un motivo concreto: da Parigi possono atterrare
@@ -194,11 +198,23 @@ due voli veri e distinti allo stesso minuto, e una regola che fonde per
 `origine + orario` li cancellerebbe. Meglio un numero gonfiato che si vede in
 diagnostica che un volo vero sparito in silenzio.
 
-**Va misurato, non sperato.** La pagina arrivi sembra restituire intorno alle 800
-righe al giorno (numero da confermare in implementazione), mentre Fiumicino riceve
-circa 450-500 voli veri. Se dopo la deduplica il totale scende in quella
-forchetta, la regola funziona. Se resta a 800, ogni fascia è gonfiata di circa il
-40%, e lo è **peggio** sulle rotte più vendute in codeshare.
+Il punto 0 è arrivato dopo, dai dati veri, e non contraddice il 3: il 3 rifiuta di
+fondere righe che si *somigliano*, il 0 scarta righe **identiche**. Servono perché
+la fonte è una lista viva che si sposta durante i due minuti di paginazione, e la
+regola 1 non le vede: filtra per `operatoDa`, mentre le righe duplicate che
+restano hanno `operatoDa` nullo. Misurato sul campo: 8 righe duplicate esatte su
+634, di cui 5 già assorbite dalla regola 1 e 3 che sopravvivevano. Sono l'1,4% del
+totale, e con soglie a 3 e 6 un volo fantasma basta a cambiare il colore di una
+fascia.
+
+**Va misurato, non sperato.** Misurato: 634 righe grezze in una finestra
+pomeridiana, 224 voli veri, rapporto **2,83**. Se il rapporto resta vicino a 1 la
+deduplica non funziona e ogni fascia è gonfiata di circa il 180%, peggio sulle
+rotte più vendute in codeshare. Il conteggio assoluto non è un riferimento utile
+perché la fonte è a finestra mobile (§ Errori e degrado): dipende dall'ora.
+`sospettiDuplicati` sui contabili è scesa da 4 a 1 con l'introduzione del punto 0,
+e quell'1 residuo è una coincidenza vera fra due voli distinti — cioè esattamente
+il caso che il punto 3 protegge.
 
 **Cosa non si conta.** I cancellati (passeggeri non ne portano) e i dirottati
 (atterrano altrove). Attenzione: gli stati osservati finora sono solo `Arrivato` e
@@ -306,7 +322,7 @@ Subito, perché protegge i numeri:
 
 1. **Controllo del rapporto di deduplica** su una fixture di raccolto vero: il
    rapporto fra righe grezze e voli dedotti deve cadere fra **2 e 4,5**. Misurato
-   sul campo: 717 righe grezze → 249 voli fisici, rapporto **2,88**. È l'unica
+   sul campo: 634 righe grezze → 224 voli fisici, rapporto **2,83**. È l'unica
    difesa contro il conteggio raddoppiato in silenzio: vicino a 1 la deduplica non
    sta funzionando, molto sopra sta fondendo voli distinti. La forchetta sta in
    configurazione, non nel test.

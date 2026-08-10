@@ -1,11 +1,35 @@
 import { inMinuti } from './tempo.js'
 
+// Due righe identiche in OGNI campo sono la stessa riga vista due volte, non due
+// aerei: nessun volo vero condivide codice, orario e origine con un altro volo vero.
+// Attenzione a non confonderla con la fusione per origine e orario, che la spec
+// vieta e che cancellerebbe due voli distinti da Parigi allo stesso minuto. Qui il
+// confronto e' su tutti i campi, quindi basta un terminal diverso per tenerle
+// entrambe. Servono perche' la fonte e' una lista viva che si sposta durante la
+// paginazione, e la deduplica per codeshare non le vede: passano solo le righe con
+// operatoDa, mentre queste hanno operatoDa nullo.
+const identita = (volo) => [
+  volo.codice, volo.previsto, volo.effettivo, volo.vettore,
+  volo.operatoDa, volo.origine, volo.iata, volo.terminal, volo.stato
+].join('|')
+
+function togliRigheIdentiche (voli) {
+  const viste = new Set()
+  return voli.filter((volo) => {
+    const chiave = identita(volo)
+    if (viste.has(chiave)) return false
+    viste.add(chiave)
+    return true
+  })
+}
+
 export function deduplica (voli) {
-  const operativiPresenti = new Set(voli.filter((v) => !v.operatoDa).map((v) => v.codice))
+  const unici = togliRigheIdentiche(voli)
+  const operativiPresenti = new Set(unici.filter((v) => !v.operatoDa).map((v) => v.codice))
   const orfaniVisti = new Set()
   const risultato = []
 
-  for (const volo of voli) {
+  for (const volo of unici) {
     if (!volo.operatoDa) {
       risultato.push(volo)
       continue

@@ -48,6 +48,16 @@ test('due voli veri con stessa origine e stesso orario non vengono fusi se hanno
   assert.equal(deduplica(voli).length, 2)
 })
 
+test('due righe identiche in ogni campo diventano una', () => {
+  const voli = [volo({ codice: 'BQ 1975', origine: 'MOSTAR' }), volo({ codice: 'BQ 1975', origine: 'MOSTAR' })]
+  assert.equal(deduplica(voli).length, 1)
+})
+
+test('due righe che differiscono in un solo campo restano due', () => {
+  const voli = [volo({ codice: 'BQ 1975', terminal: 'T1' }), volo({ codice: 'BQ 1975', terminal: 'T3' })]
+  assert.equal(deduplica(voli).length, 2)
+})
+
 test('i voli senza codeshare passano intatti', () => {
   const voli = [volo({ codice: 'MS 791' }), volo({ codice: 'RJ 101', previsto: '13:05' })]
   assert.equal(deduplica(voli).length, 2)
@@ -60,8 +70,8 @@ test('gli stati esclusi non arrivano al conteggio', () => {
 
 // Il controllo è sul RAPPORTO grezzi/dedotti, non sul totale assoluto: la fonte è una
 // board live con una finestra mobile di poche ore, quindi il numero di voli dipende
-// dall'ora in cui gira lo scarico, mentre il rapporto no. Osservato sul campo: 717
-// righe grezze → 249 voli fisici, rapporto 2,88.
+// dall'ora in cui gira lo scarico, mentre il rapporto no. Osservato sul campo: 634
+// righe grezze → 224 voli fisici, rapporto 2,83.
 test('su una giornata vera la deduplica ha un rapporto plausibile', async () => {
   const grezzi = JSON.parse(await readFile('test/fixture/voli-giornata.json', 'utf8'))
   const puliti = deduplica(grezzi)
