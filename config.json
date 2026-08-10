@@ -11,5 +11,5 @@
   "etaAvvisoMinuti": 30,
   "etaNonAffidabileMinuti": 180,
   "rete": { "tentativi": 3, "attesaMs": 2000, "timeoutMs": 20000 },
-  "statiEsclusi": []
+  "statiEsclusi": ["Volo Cancellato"]
 }

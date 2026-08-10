@@ -399,3 +399,36 @@ Due scoperte che cambiano il design:
    previsto 13:05, effettivo 17:00 e stato `Schedulato`: l'aereo non è ancora
    atterrato, le 17:00 sono una *previsione*. È esattamente il dato che ci serve,
    ma va letto **insieme allo stato**, non da solo.
+
+### Stati volo osservati (censiti il 2026-08-10)
+
+Questa era l'unica incognita dichiarata aperta dalla spec: quali valori esatti usa
+ADR nella colonna "Stato del volo". Chiusa con `npm run stati` su un raccolto vero
+di 634 righe, catturato alle 17:02 (finestra 15:00-23:55).
+
+| voli | stato | contato? |
+|-----:|-------|----------|
+| 448 | `Schedulato` | sì |
+| 101 | `Arrivato` | sì |
+| 51 | `Volo Cancellato` | **no, escluso** |
+| 34 | `In Arrivo` | sì |
+
+Quattro valori distinti, e `Schedulato` + `Arrivato` da soli fanno l'86,6%.
+
+**Escluso solo `Volo Cancellato`**, con questa grafia esatta — non `Cancellato`
+liscio, come la spec aveva ipotizzato. È l'unico dei quattro che significhi «questo
+aereo non porta passeggeri a Fiumicino». `In Arrivo` si conta: è un volo in
+avvicinamento, cioè il caso più certo che ci sia. Il confronto nel codice è
+case-insensitive, ma il valore in configurazione è quello che ADR stampa davvero.
+
+Due limiti di questo censimento, da tenere presenti invece di scoprirli dopo:
+
+- **`Dirottato` non è mai comparso.** La spec lo dava come secondo stato da
+  escludere; nel raccolto non esiste, quindi non è stato messo in `statiEsclusi`
+  con una grafia inventata. Conseguenza: un volo dirottato oggi verrebbe contato
+  come in arrivo. È la direzione d'errore che la regola di conteggio accetta
+  esplicitamente («in dubbio si conta»), ma è un buco noto: al primo dirottamento
+  osservato va aggiunta la grafia vera.
+- **Il campione è una sola finestra pomeridiana.** La fonte è una board live e non
+  dà le ore già passate, quindi mancano gli stati del mattino e le rarità. Un
+  censimento ripetuto in una fascia diversa può far emergere valori nuovi.
