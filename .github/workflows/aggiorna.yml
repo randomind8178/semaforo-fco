@@ -1,8 +1,18 @@
 name: aggiorna i dati
 
 on:
-  schedule:
-    - cron: '*/15 * * * *'
+  # Lo scheduler e' DISATTIVATO di proposito. adr.it risponde HTTP 403 alle richieste
+  # che partono dai runner di GitHub: gli IP stanno nei range Azure, e il WAF davanti al
+  # sito li rifiuta. Da una connessione domestica lo stesso codice funziona, e anche da
+  # altri datacenter: non e' il sito che ha chiuso, e' quel percorso di rete a essere
+  # bloccato. Lasciando il cron attivo il job fallirebbe 96 volte al giorno, riempiendo
+  # la casella di notifiche e nascondendo i guasti veri fra il rumore.
+  # Resta workflow_dispatch, che serve a verificare test e generazione a comando.
+  # Da riattivare solo se un giorno il 403 sparisce, oppure sostituire con un runner
+  # self-hosted, che gira sulla rete di casa e usa lo stesso identico workflow.
+  #
+  # schedule:
+  #   - cron: '7,22,37,52 * * * *'
   workflow_dispatch:
 
 permissions:

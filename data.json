@@ -1,5 +1,5 @@
 {
- "generatoAlle": "2026-08-10T19:14:38.172Z",
+ "generatoAlle": "2026-08-10T20:14:49.717Z",
  "giorno": "2026-08-10",
  "config": {
   "ampiezzaFasciaMinuti": 30,
@@ -13,20 +13,20 @@
   "etaNonAffidabileMinuti": 180
  },
  "copertura": {
-  "daMinuti": 1140,
+  "daMinuti": 1205,
   "aMinuti": 1440
  },
  "verdetto": {
-  "arrivoMinuti": 1304,
-  "arrivoStimato": "21:44",
-  "voli": 10,
+  "arrivoMinuti": 1364,
+  "arrivoStimato": "22:44",
+  "voli": 7,
   "colore": "verde"
  },
  "fasce": [
   {
    "inizioMinuti": 0,
    "inizio": "00:00",
-   "voli": 1,
+   "voli": 2,
    "colore": "rosso"
   },
   {
@@ -242,7 +242,7 @@
   {
    "inizioMinuti": 1080,
    "inizio": "18:00",
-   "voli": 1,
+   "voli": 0,
    "colore": "rosso"
   },
   {
@@ -254,25 +254,25 @@
   {
    "inizioMinuti": 1140,
    "inizio": "19:00",
-   "voli": 14,
-   "colore": "verde"
+   "voli": 1,
+   "colore": "rosso"
   },
   {
    "inizioMinuti": 1170,
    "inizio": "19:30",
-   "voli": 15,
-   "colore": "verde"
+   "voli": 3,
+   "colore": "giallo"
   },
   {
    "inizioMinuti": 1200,
    "inizio": "20:00",
-   "voli": 11,
+   "voli": 9,
    "colore": "verde"
   },
   {
    "inizioMinuti": 1230,
    "inizio": "20:30",
-   "voli": 13,
+   "voli": 10,
    "colore": "verde"
   },
   {
@@ -284,39 +284,39 @@
   {
    "inizioMinuti": 1290,
    "inizio": "21:30",
-   "voli": 17,
+   "voli": 15,
    "colore": "verde"
   },
   {
    "inizioMinuti": 1320,
    "inizio": "22:00",
-   "voli": 4,
+   "voli": 5,
    "colore": "giallo"
   },
   {
    "inizioMinuti": 1350,
    "inizio": "22:30",
-   "voli": 13,
+   "voli": 10,
    "colore": "verde"
   },
   {
    "inizioMinuti": 1380,
    "inizio": "23:00",
-   "voli": 5,
-   "colore": "giallo"
+   "voli": 9,
+   "colore": "verde"
   },
   {
    "inizioMinuti": 1410,
    "inizio": "23:30",
-   "voli": 11,
+   "voli": 8,
    "colore": "verde"
   }
  ],
  "diagnostica": {
-  "righeScaricate": 301,
-  "voliDopoDeduplica": 125,
-  "voliContabili": 120,
-  "scartatiPerStato": 5,
+  "righeScaricate": 243,
+  "voliDopoDeduplica": 90,
+  "voliContabili": 87,
+  "scartatiPerStato": 3,
   "sospettiDuplicati": 1
  }
 }

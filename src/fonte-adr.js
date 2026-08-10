@@ -50,7 +50,16 @@ export async function scaricaPagina (opzioni, rete) {
         headers: { 'User-Agent': AGENTE, 'Accept-Language': 'it-IT,it' },
         signal: AbortSignal.timeout(rete.timeoutMs)
       })
-      if (!risposta.ok) throw new Error(`HTTP ${risposta.status}`)
+      if (!risposta.ok) {
+        // Un "HTTP 403" nudo non dice niente: puo' essere il sito che non c'e' piu' o un
+        // WAF che rifiuta l'IP da cui parte la richiesta. Il corpo e l'header server
+        // portano il codice di riferimento del WAF, che e' l'unica cosa utile per capirlo.
+        const corpo = (await risposta.text()).replace(/\s+/g, ' ').trim().slice(0, 300)
+        throw new Error(
+          `HTTP ${risposta.status} (server: ${risposta.headers.get('server') ?? 'n/d'}) — ` +
+          `inizio risposta: ${corpo || '(vuota)'}`
+        )
+      }
       return await risposta.text()
     } catch (errore) {
       ultimoErrore = errore
