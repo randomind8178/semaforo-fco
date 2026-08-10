@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
-import { deduplica, escludiStati } from '../src/aggregatore.js'
+import { deduplica, escludiStati, colore, costruisciFasce } from '../src/aggregatore.js'
 
 const config = JSON.parse(await readFile('config.json', 'utf8'))
 
@@ -83,4 +83,31 @@ test('su una giornata vera la deduplica ha un rapporto plausibile', async () => 
     `(${grezzi.length} grezzi → ${puliti.length} dedotti). ` +
     'Vicino a 1 la deduplica non sta funzionando; molto sopra sta fondendo voli distinti.'
   )
+})
+
+test('il colore cambia esattamente sulle soglie', () => {
+  const soglie = { giallo: 3, verde: 6 }
+  assert.equal(colore(0, soglie), 'rosso')
+  assert.equal(colore(2, soglie), 'rosso')
+  assert.equal(colore(3, soglie), 'giallo')
+  assert.equal(colore(5, soglie), 'giallo')
+  assert.equal(colore(6, soglie), 'verde')
+  assert.equal(colore(40, soglie), 'verde')
+})
+
+test('le fasce coprono le 24 ore anche dove non atterra niente', () => {
+  const fasce = costruisciFasce([], { ampiezzaFasciaMinuti: 30, soglie: { giallo: 3, verde: 6 } })
+  assert.equal(fasce.length, 48)
+  assert.equal(fasce[0].inizio, '00:00')
+  assert.equal(fasce[47].inizio, '23:30')
+  assert.ok(fasce.every((f) => f.voli === 0 && f.colore === 'rosso'))
+})
+
+test('un volo ritardato cade nella fascia del suo orario aggiornato', () => {
+  const voli = [volo({ previsto: '13:05', effettivo: '17:00' })]
+  const fasce = costruisciFasce(voli, { ampiezzaFasciaMinuti: 30, soglie: { giallo: 3, verde: 6 } })
+  const tredici = fasce.find((f) => f.inizio === '13:00')
+  const diciassette = fasce.find((f) => f.inizio === '17:00')
+  assert.equal(tredici.voli, 0, 'il volo è rimasto nella fascia programmata invece di seguire il ritardo')
+  assert.equal(diciassette.voli, 1)
 })

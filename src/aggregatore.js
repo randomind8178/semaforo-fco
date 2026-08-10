@@ -1,4 +1,4 @@
-import { inMinuti } from './tempo.js'
+import { inMinuti, inOrario } from './tempo.js'
 
 // Due righe identiche in OGNI campo sono la stessa riga vista due volte, non due
 // aerei: nessun volo vero condivide codice, orario e origine con un altro volo vero.
@@ -66,4 +66,28 @@ export function escludiStati (voli, statiEsclusi = []) {
 
 export function minutiArrivo (volo) {
   return inMinuti(volo.effettivo ?? volo.previsto)
+}
+
+export function colore (numeroVoli, soglie) {
+  if (numeroVoli >= soglie.verde) return 'verde'
+  if (numeroVoli >= soglie.giallo) return 'giallo'
+  return 'rosso'
+}
+
+export function costruisciFasce (voli, config) {
+  const ampiezza = config.ampiezzaFasciaMinuti
+  const quante = Math.floor(1440 / ampiezza)
+  const conteggi = new Array(quante).fill(0)
+
+  for (const volo of voli) {
+    const indice = Math.floor((minutiArrivo(volo) % 1440) / ampiezza)
+    conteggi[indice] += 1
+  }
+
+  return conteggi.map((numeroVoli, indice) => ({
+    inizioMinuti: indice * ampiezza,
+    inizio: inOrario(indice * ampiezza),
+    voli: numeroVoli,
+    colore: colore(numeroVoli, config.soglie)
+  }))
 }
