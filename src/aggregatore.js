@@ -91,3 +91,18 @@ export function costruisciFasce (voli, config) {
     colore: colore(numeroVoli, config.soglie)
   }))
 }
+
+export function calcolaVerdetto (voli, config, adessoMinuti) {
+  const arrivo = adessoMinuti + config.minutiViaggio
+  const larghezza = config.ampiezzaFasciaMinuti
+  const dentro = voli.filter((v) => {
+    const distanza = ((minutiArrivo(v) - arrivo) % 1440 + 1440) % 1440
+    return distanza < larghezza
+  })
+  return {
+    arrivoMinuti: arrivo % 1440,
+    arrivoStimato: inOrario(arrivo),
+    voli: dentro.length,
+    colore: colore(dentro.length, config.soglie)
+  }
+}

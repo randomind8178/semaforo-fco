@@ -897,11 +897,21 @@ test('la finestra include l’istante di arrivo ed esclude la fine', () => {
   assert.equal(verdetto.voli, 1, 'il volo alle 15:00 è fuori: la finestra 14:30-15:00 esclude l’estremo destro')
 })
 
+// CORRETTO in implementazione. La prima stesura era `[volo({ previsto: '00:10' })]` con
+// `voli === 1` atteso, e falliva: con adesso 23:50 l'arrivo e' 00:20 e la finestra
+// 00:20-00:50, quindi un volo alle 00:10 e' FUORI — atterra prima che tu arrivi, come
+// quello alle 14:05 nel primo test. Il test contraddiceva i suoi due fratelli;
+// l'implementazione era giusta. Ora prova il salto del giorno in entrambe le direzioni.
 test('il verdetto scavalca la mezzanotte', () => {
-  const voli = [volo({ previsto: '00:10' })]
+  const voli = [
+    volo({ previsto: '00:10' }), // fuori: già atterrato quando arrivi
+    volo({ previsto: '00:30' }), // dentro
+    volo({ previsto: '00:49' }), // dentro, ultimo minuto utile
+    volo({ previsto: '00:50' })  // fuori: la finestra esclude l'estremo destro
+  ]
   const verdetto = calcolaVerdetto(voli, configBase, 23 * 60 + 50)
   assert.equal(verdetto.arrivoStimato, '00:20')
-  assert.equal(verdetto.voli, 1, 'i voli dopo la mezzanotte non vengono visti')
+  assert.equal(verdetto.voli, 2, 'i voli dopo la mezzanotte non vengono visti, oppure la finestra non si chiude')
 })
 ```
 

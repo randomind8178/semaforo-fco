@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
-import { deduplica, escludiStati, colore, costruisciFasce } from '../src/aggregatore.js'
+import { deduplica, escludiStati, colore, costruisciFasce, calcolaVerdetto } from '../src/aggregatore.js'
 
 const config = JSON.parse(await readFile('config.json', 'utf8'))
 
@@ -110,4 +110,44 @@ test('un volo ritardato cade nella fascia del suo orario aggiornato', () => {
   const diciassette = fasce.find((f) => f.inizio === '17:00')
   assert.equal(tredici.voli, 0, 'il volo è rimasto nella fascia programmata invece di seguire il ritardo')
   assert.equal(diciassette.voli, 1)
+})
+
+const configBase = { ampiezzaFasciaMinuti: 30, minutiViaggio: 30, soglie: { giallo: 3, verde: 6 } }
+
+test('il verdetto guarda i 30 minuti dopo l’arrivo, non la fascia fissa', () => {
+  // Adesso 13:58 → arrivo 14:28. La finestra è 14:28-14:58.
+  const voli = [
+    volo({ previsto: '14:05' }),  // fuori: già atterrato quando arriva
+    volo({ previsto: '14:10' }),  // fuori
+    volo({ previsto: '14:35' }),  // dentro
+    volo({ previsto: '14:40' }),  // dentro
+    volo({ previsto: '14:50' })   // dentro
+  ]
+  const verdetto = calcolaVerdetto(voli, configBase, 13 * 60 + 58)
+  assert.equal(verdetto.arrivoStimato, '14:28')
+  assert.equal(verdetto.voli, 3, 'la finestra mobile sta contando i voli della fascia fissa')
+  assert.equal(verdetto.colore, 'giallo')
+})
+
+test('la finestra include l’istante di arrivo ed esclude la fine', () => {
+  const voli = [volo({ previsto: '14:30' }), volo({ previsto: '15:00' })]
+  const verdetto = calcolaVerdetto(voli, configBase, 14 * 60)
+  assert.equal(verdetto.arrivoStimato, '14:30')
+  assert.equal(verdetto.voli, 1, 'il volo alle 15:00 è fuori: la finestra 14:30-15:00 esclude l’estremo destro')
+})
+
+test('il verdetto scavalca la mezzanotte', () => {
+  // Adesso 23:50 → arrivo 00:20, quindi la finestra 00:20-00:50 sta a cavallo del
+  // giorno. Il volo alle 00:10 deve restare FUORI: atterra prima che tu arrivi,
+  // esattamente come quello alle 14:05 nel test della finestra mobile. La prima
+  // stesura di questo test lo contava come dentro, in contraddizione con gli altri due.
+  const voli = [
+    volo({ previsto: '00:10' }), // fuori: già atterrato quando arrivi
+    volo({ previsto: '00:30' }), // dentro
+    volo({ previsto: '00:49' }), // dentro, ultimo minuto utile
+    volo({ previsto: '00:50' })  // fuori: la finestra esclude l'estremo destro
+  ]
+  const verdetto = calcolaVerdetto(voli, configBase, 23 * 60 + 50)
+  assert.equal(verdetto.arrivoStimato, '00:20')
+  assert.equal(verdetto.voli, 2, 'i voli dopo la mezzanotte non vengono visti, oppure la finestra non si chiude')
 })
