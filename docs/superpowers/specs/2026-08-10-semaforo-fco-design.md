@@ -311,10 +311,15 @@ all'utente di restare a casa per sempre.
   `minimoVoliPlausibile` righe, il cron **falla rumorosamente e non scrive `data.json`**:
   difende dal parser morto. Un dato di quaranta minuti fa è meglio di un dato vuoto
   verniciato di rosso.
-  **Punto aperto**, da chiudere insieme agli orari del cron (§ Task 10): con la finestra
-  mobile, a tarda sera restano legittimamente poche decine di voli, quindi una soglia
-  fissa a 100 farebbe fallire il cron ogni notte per un motivo che non è un guasto. La
-  soglia va abbassata, oppure resa proporzionale alle ore che restano nella finestra.
+  **Punto chiuso, e la prima risposta era sbagliata.** Sembrava che con la finestra
+  mobile a tarda sera restassero poche decine di voli, e che quindi una soglia fissa a
+  100 avrebbe fatto fallire il cron ogni notte senza un guasto vero. Quella conclusione
+  veniva da una extrapolazione lineare su due misure e ignorava un fatto: la finestra
+  **mantiene sempre 2-3 ore di passato**, quindi le righe non tendono a zero
+  avvicinandosi a mezzanotte. Misurato dal campo `copertura`: alle 20:46 copriva
+  18:00-24:00 con 348 righe, alle 21:14 copriva 19:00-24:00 con 301, cioè ~60 righe
+  l'ora. A mezzanotte la copertura resta intorno a 21:00-24:00, quindi circa 150 righe
+  grezze. La soglia di 100 tiene con circa il 50% di margine e resta com'è.
 - **Controllo del doppio conteggio.** È un controllo diverso dal precedente e vive nel
   test sulla deduplica (§ Test): guarda il **rapporto** fra righe grezze e voli dedotti,
   non il totale. Il rapporto non dipende dall'ora, il totale sì.
