@@ -1,0 +1,14 @@
+{
+  "ampiezzaFasciaMinuti": 30,
+  "minutiViaggio": 30,
+  "soglie": { "giallo": 3, "verde": 6 },
+  "oreAvantiInLista": 4,
+  "righePerPagina": 20,
+  "maxPagine": 80,
+  "pausaFraPagineMs": 1200,
+  "minimoVoliPlausibile": 100,
+  "forchettaDeduplica": { "min": 350, "max": 600 },
+  "etaAvvisoMinuti": 30,
+  "etaNonAffidabileMinuti": 180,
+  "statiEsclusi": []
+}
